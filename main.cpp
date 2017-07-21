@@ -15,6 +15,100 @@ void display(vector<vector<int> > board) {
 	}
 }
 
+bool isInVector(int value, vector<int> row) {
+	for (int i = 0; i < row.size(); i++) {
+		if (row[i] == value) {
+			return true;
+		}
+	}
+	return false;
+}
+
+vector<int> getCol(vector<vector<int> > board, int colNum) {
+	vector<int> output;
+	for (int row = 0; row < board.size(); row++) {
+		output.push_back(board[row][colNum]);
+	}
+	return output;
+}
+
+/*
+   block1|block2|block3
+   ------|------|------
+   --------------------
+   block4|block5|block6
+   --------------------
+   ------|------|------
+   block7|block8|block9
+*/
+
+vector<int> getBlock(vector<vector<int> > board, int blockNum) {
+	int rowStart, rowStop, colStart, colStop;
+	switch (blockNum) {
+		case 1:
+			rowStart = 0;
+			rowStop = 3;
+			colStart = 0;
+			colStop = 3;
+			break;
+		case 2:
+			rowStart = 0;
+			rowStop = 3;
+			colStart = 3;
+			colStop = 6;
+			break;
+		case 3:
+			rowStart = 0;
+			rowStop = 3;
+			colStart = 6;
+			colStop = 9;
+			break;
+		case 4:
+			rowStart = 3;
+			rowStop = 6;
+			colStart = 0;
+			colStop = 3;
+			break;
+		case 5:
+			rowStart = 3;
+			rowStop = 6;
+			colStart = 3;
+			colStop = 6;
+			break;
+		case 6:
+			rowStart = 3;
+			rowStop = 6;
+			colStart = 6;
+			colStop = 9;
+			break;
+		case 7:
+			rowStart = 6;
+			rowStop = 9;
+			colStart = 0;
+			colStop = 3;
+			break;
+		case 8:
+			rowStart = 6;
+			rowStop = 9;
+			colStart = 3;
+			colStop = 6;
+			break;
+		case 9:
+			rowStart = 6;
+			rowStop = 9;
+			colStart = 6;
+			colStop = 9;
+			break;
+	}
+	vector<int> output;
+	for(int row = rowStart; row < rowStop; row++) {
+		for (int col = colStart; col < colStop; col++) {
+			output.push_back(board[row][col]);
+		}
+	}
+	return output;
+}
+
 vector<int> getNextAvailable(vector<vector<int> > board) {
 	vector<int> r;
 	r.push_back(-1);
@@ -29,6 +123,36 @@ vector<int> getNextAvailable(vector<vector<int> > board) {
 		}
 	}
 	return r;
+}
+
+bool checkBlocks(vector<vector<int> > board) {
+	vector<int> block;
+	vector<int> tmp;
+	for (int i = 0; i < board.size(); i++) {
+		tmp.push_back(-1);
+	}
+	for (int blockNum = 1; blockNum <= 9; blockNum++) {
+		//get block
+		block = getBlock(board, blockNum);
+		//reinitialize tmp
+		for (int i = 0; i < board.size()+1; i++) {
+			tmp[i] = 0;
+		}
+		//check to see if block is valid
+		for (int i = 0; i < block.size(); i++) {
+			int val = block[i];
+			if (val == 0) {
+				continue;
+			}
+			if (tmp[val-1] == 1) {
+				return false;
+			}
+			else {
+				tmp[val-1] = 1;
+			}
+		}
+	}
+	return true;
 }
 
 bool isValid(vector<vector<int> > board) {
@@ -88,6 +212,11 @@ bool isValid(vector<vector<int> > board) {
                         }
                 }
         }
+
+	//check squares
+	if (! checkBlocks(board)) {
+		return false;
+	}
         return true;
 }
 
@@ -95,8 +224,9 @@ bool solveSudoku(vector<vector<int> > board) {
 	vector<int> next = getNextAvailable(board);
 	if (next[0] == -1 && next[1] == -1) {
 		numBaseCases++;
-		if (numBaseCases % 100000 == 0) {
+		if (numBaseCases % 100 == 0) {
 			cout << numBaseCases << endl;
+			display(board);
 		}
 		if (isValid(board)) {
 			cout << "Solved: \n";
@@ -108,7 +238,15 @@ bool solveSudoku(vector<vector<int> > board) {
 		}
 	}
 	for (int i = 1; i <= board.size(); i++) {
+		//check to see if value is already present in row || column
+		if (isInVector(i, board[next[0]]) || isInVector(i, getCol(board, next[1]))) {
+			continue;
+		
+		}
 		board[next[0]][next[1]] = i;
+		if (! checkBlocks(board)) {
+			continue;
+		}
 		if (solveSudoku(board)) {
 			return true;
 		}
@@ -132,6 +270,16 @@ void run() {
 			board[i].push_back(tmp);
 		}
 	}
+	/*vector<int> output;
+	for (int i = 1; i < 10; i++) {
+		output = getBlock(board, i);
+		cout << "block: " << i << endl;
+		for (int j = 0; j < output.size(); j++) {
+			cout << output[j] << ' ';
+		}
+		cout << endl;
+	}
+	return;*/
 	cout << "solving...\n";
 	if (! solveSudoku(board)) {
 		cout << "No possible solution.\n";
@@ -141,5 +289,21 @@ void run() {
 
 int main() {
 	run();
+	/*vector<vector<int> > board  = {
+		{2, 0, 0},
+		{3, 2, 1},
+		{0, 3, 2}};
+		int row = 2;
+		int col = 0;
+		for (int i = 1; i <= 3; i++) {
+			cout << "i: " << i << endl;
+			if (isInVector(i, board[row])) {
+				cout << "\tvalue in row\n";
+			}
+			if (isInVector(i, getCol(board, col))) {
+				cout << "\tvalue in column\n";		
+			}
+		}*/
+		
 	return 0;
 }
